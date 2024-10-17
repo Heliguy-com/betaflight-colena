@@ -32,6 +32,7 @@
 
 
 // TODO: Implement the functions using the sensor's API found in libs.
+// The accelerometer driver doesn't use the API despite it being found in the repo, why?
 
 static bool bmm350Read(magDev_t * mag, int16_t *magData)
 {

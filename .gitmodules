@@ -1,0 +1,3 @@
+[submodule "lib/main/BoschSensortec/BMM350_SensorAPI"]
+	path = lib/main/BoschSensortec/BMM350_SensorAPI
+	url = https://github.com/boschsensortec/BMM350_SensorAPI
