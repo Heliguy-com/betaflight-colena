@@ -33,10 +33,11 @@
 
 typedef enum {
     FLASH_TYPE_NOR = 0,
-    FLASH_TYPE_NAND
+    FLASH_TYPE_NAND,
+    FLASH_TYPE_FRAM
 } flashType_e;
 
-typedef uint16_t flashSector_t;
+typedef uint32_t flashSector_t;
 
 typedef struct flashGeometry_s {
     flashSector_t sectors; // Count of the number of erasable blocks on the device
