@@ -401,9 +401,13 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     const uint8_t *buffers[1];
     uint32_t bufferSizes[1];
 
+    // Always True for flashPageSize = 1, which is the case for FRAM
     bool onPageBoundary = (flashAddress % flashPageSize == 0);
-    if (onPageBoundary) {
 
+    if (flashGeormetry->flashType != USE_FRAM && onPageBoundary) {
+
+        // True when dataOffset = 0, (no difference between c->address and &eepromData[0])
+        // c->address is a pointer to where in eePromData buffer begins?
         bool firstPage = (flashAddress == flashStartAddress);
         if (!firstPage) {
             flashPageProgramFinish();
@@ -419,7 +423,13 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     buffers[0] = (uint8_t *)buffer;
     bufferSizes[0] = CONFIG_STREAMER_BUFFER_SIZE;
 
-    flashPageProgramContinue(buffers, bufferSizes, 1);
+    // If using FRAM, call page program each time data is written
+    if (flashGeormetry->flashType != USE_FRAM) {
+        flashPageProgram(address, flashAddress, buffer, bufferSizes, NULL)
+    }
+    else {
+        flashPageProgramContinue(buffers, bufferSizes, 1);
+    }
 
 #elif defined(CONFIG_IN_RAM) || defined(CONFIG_IN_SDCARD) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
     if (c->address == (uintptr_t)&eepromData[0]) {

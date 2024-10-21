@@ -137,7 +137,7 @@ MMFLASH_CODE_NOINLINE void saveEEPROMToMemoryMappedFlash(void)
         }
 
         bool onSectorBoundary = flashAddress % flashSectorSize == 0;
-        if (onSectorBoundary) {
+        if (flashGeormetry->flashType != USE_FRAM && onSectorBoundary) {
             flashEraseSector(flashAddress);
         }
 

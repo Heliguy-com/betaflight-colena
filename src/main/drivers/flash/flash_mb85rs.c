@@ -28,7 +28,7 @@
 
 #include "build/debug.h"
 
-// #ifdef USE_FLASH_MB85RS
+#ifdef USE_FLASH_MB85RS
 
 #include "drivers/bus_spi.h"
 #include "drivers/bus_quadspi.h"
@@ -42,18 +42,18 @@
 #include "drivers/flash/flash_mb85rs.h"
 
 
+// This is decidedly not flash, but it is persistent memory over SPI that should support the same functions as flash within betafllight
+// Implemented as flash for ease 
+
 // TODO:
-// - Remove unnecessary include statements added
-// - Remove unused macros
-// - Implement eraseSector and eraseCompletely
-// - Implement pageProgram (Begin, Continue and Finish)
-// - Review read status: Make sure command is correct and it is being interpretted correctly
+// [ ] Remove unnecessary include statements added by vscode
+// [ ] Remove unused macros
+// [-] Implement eraseSector and eraseCompletely
+// [ ] Implement pageProgram (Begin, Continue and Finish)
+// [ ] Review callbacks
+// [ ] Review read status: Make sure command is correct and it is being interpretted correctly
+// [ ] Verify that write will work when writing over >2 segments as this will be common with this implementation.
 
-// SPI transaction segment indicies for mb85rs_pageProgramContinue()
-enum {READ_STATUS, WRITE_ENABLE, PAGE_PROGRAM, DATA1, DATA2};
-
-static uint32_t maxClkSPIHz;
-static uint32_t maxReadClkSPIHz;
 
 #define MB85RS_INSTRUCTION_RDID             SPIFLASH_INSTRUCTION_RDID
 #define MB85RS_INSTRUCTION_READ_BYTES       0x03
@@ -87,35 +87,27 @@ static uint32_t maxReadClkSPIHz;
 
 #define MB85RS_FAST_READ_DUMMY_CYCLES       8
 
+// SPI transaction segment indicies for mb85rs_pageProgramContinue()
+enum {READ_STATUS, WRITE_ENABLE, PAGE_PROGRAM, DATA1, DATA2};
 
 const flashVTable_t mb85rs_vTable;
-
-// Used in flash_m25p16.c (SPI transaction segment indicies for m25p16_pageProgramContinue())
-// enum {READ_STATUS, WRITE_ENABLE, PAGE_PROGRAM, DATA1, DATA2};
-
 static uint32_t maxClkSPIHz;
 static uint32_t maxReadClkSPIHz;
 
-// static uint8_t mb85rs_readStatus(flashDevice_t *fdevice)
-// {
-//     uint8_t status = 0;
-//     if (fdevice->io.mode == FLASHIO_SPI) {
-//         STATIC_DMA_DATA_AUTO uint8_t readStatus[2] = { MB85RS_INSTRUCTION_READ_STATUS_REG, 0 };
-//         STATIC_DMA_DATA_AUTO uint8_t readyStatus[2];
+static uint8_t mb85rs_readStatus(flashDevice_t *fdevice)
+{
+    uint8_t status = 0;
+    if (fdevice->io.mode == FLASHIO_SPI) {
+        STATIC_DMA_DATA_AUTO uint8_t readStatus[1] = { MB85RS_INSTRUCTION_RDSR };
+        STATIC_DMA_DATA_AUTO uint8_t readyStatus[1];
 
-//         spiReadWriteBuf(fdevice->io.handle.dev, readStatus, readyStatus, sizeof(readStatus));
+        spiReadWriteBuf(fdevice->io.handle.dev, readStatus, readyStatus, sizeof(readStatus));
 
-//         status = readyStatus[1];
-//     } else {
-// #ifdef USE_QUADSPI
-//         if (fdevice->io.mode == FLASHIO_QUADSPI) {
-//             quadSpiReceive1LINE(fdevice->io.handle.quadSpi, MB85RS_INSTRUCTION_READ_STATUS_REG, 0, &status, 1);
-//         }
-// #endif
-//     }
+        status = readyStatus[0];
+    }
 
-//     return status;
-// }
+    return status;
+}
 
 static bool mb85rs_isReady(flashDevice_t *fdevice)
 {
@@ -126,15 +118,7 @@ static bool mb85rs_isReady(flashDevice_t *fdevice)
         }
     }
 
-    // If couldBeBusy is false, don't bother to poll the flash chip for its status
-    if (!fdevice->couldBeBusy) {
-        return true;
-    }
-
-    // Poll the FLASH device to see if it's busy
-    // fdevice->couldBeBusy = ((mb85rs_readStatus(fdevice) & mb85rs_STATUS_FLAG_WRITE_IN_PROGRESS) != 0);
-
-    return !fdevice->couldBeBusy;
+    return true;
 }
 
 static bool mb85rs_waitForReady(flashDevice_t *fdevice)
@@ -151,6 +135,7 @@ static bool mb85rs_waitForReady(flashDevice_t *fdevice)
  */
 bool mb85rs_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
+    // TODO: Check the jedecID of the SPI chip
     flashGeometry_t *geometry = &fdevice->geometry;
     uint8_t index;
 
@@ -159,13 +144,14 @@ bool mb85rs_identify(flashDevice_t *fdevice, uint32_t jedecID)
     geometry->flashType = FLASH_TYPE_FRAM;
     
     // Changed flashSector_t to uint32_t from uint16_t
-    geometry->sectors = 1048576;
+    geometry->sectors = 1 << 20;
     geometry->pagesPerSector = 1;
     geometry->pageSize = 1;
     geometry->sectorSize = 1;
     
-    geometry->totalSize = 1048576;
-    fdevice->couldBeBusy = true;
+    // 1M storage.
+    geometry->totalSize = geometry->sectors * geometry->sectorSize;
+    fdevice->couldBeBusy = false;
 
     // Not sure what this command is for
     if (fdevice->io.mode == FLASHIO_SPI) {
@@ -195,16 +181,12 @@ static void mb85rs_setCommandAddress(uint8_t *buf, uint32_t address, bool useLon
     *buf = address & 0xff;
 }
 
-// TODO: UNDERSTAND CALLBACKS
 
 // Called in ISR context
 // A write enable has just been issued
 busStatus_e mb85rs_callbackWriteEnable(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
-
-    // As a write has just occurred, the device could be busy
-    fdevice->couldBeBusy = true;
 
     return BUS_READY;
 }
@@ -231,15 +213,6 @@ busStatus_e mb85rs_callbackReady(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
     extDevice_t *dev = fdevice->io.handle.dev;
-
-    uint8_t readyPoll = dev->bus->curSegment->u.buffers.rxData[1];
-
-    if (readyPoll & MB85RS_STATUS_FLAG_WRITE_IN_PROGRESS) {
-        return BUS_BUSY;
-    }
-
-    // Bus is now known not to be busy
-    fdevice->couldBeBusy = false;
 
     return BUS_READY;
 }
@@ -272,31 +245,34 @@ static void mb85rs_eraseSector(flashDevice_t *fdevice, uint32_t address)
     spiWait(fdevice->io.handle.dev);
 }
 
+// FIXME: Only utilised inside of fs code. Changed to not use.
 static void mb85rs_eraseCompletely(flashDevice_t *fdevice)
 {
 
-    // Disable CS up on bulkerase 'completion'
-    // Instead, write fdevice->total_size many empty bytes.
-    // This will take ~0.3 seconds which is quite a while for a useless call
-    // Oh well if a command says 'eraseCompletely' it should erase completely.
-    // Might need to also implement some of the callbacks found in programpage.
+    // // Disable CS up on bulkerase 'completion'
+    // // Instead, write fdevice->total_size many empty bytes.
+    // // This will take ~0.3 seconds which is quite a while for a useless call
+    // // Oh well if a command says 'eraseCompletely' it should erase completely.
+    // // Might need to also implement some of the callbacks found in programpage.
 
-    STATIC_DMA_DATA_AUTO uint8_t readStatus[2] = { MB85RS_INSTRUCTION_RDSR, 0 };
-    STATIC_DMA_DATA_AUTO uint8_t readyStatus[2];
-    STATIC_DMA_DATA_AUTO uint8_t writeEnable[] = { MB85RS_INSTRUCTION_WREN };
-    STATIC_DMA_DATA_AUTO uint8_t bulkErase[] = { MB85RS_INSTRUCTION_WRITE };
+    // STATIC_DMA_DATA_AUTO uint8_t readStatus[2] = { MB85RS_INSTRUCTION_RDSR, 0 };
+    // STATIC_DMA_DATA_AUTO uint8_t readyStatus[2];
+    // STATIC_DMA_DATA_AUTO uint8_t writeEnable[] = { MB85RS_INSTRUCTION_WREN };
+    // STATIC_DMA_DATA_AUTO bulkEraseData = (uint8_t*)malloc(4 + 1 << 20 * sizeof(uint8_t))
 
-    busSegment_t segments[] = {
-            {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, mb85rs_callbackReady},
-            {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, mb85rs_callbackWriteEnable},
-            {.u.buffers = {bulkErase, NULL}, sizeof(bulkErase), true, NULL},
-            {.u.link = {NULL, NULL}, 0, true, NULL},
-    };
+    // bulkEraseData[0] = MB85RS_INSTRUCTION_WRITE
 
-    spiSequence(fdevice->io.handle.dev, segments);
+    // busSegment_t segments[] = {
+    //         {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, mb85rs_callbackReady},
+    //         {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, mb85rs_callbackWriteEnable},
+    //         {.u.buffers = {bulkEraseData, NULL}, sizeof(bulkEraseData), true, NULL},
+    //         {.u.link = {NULL, NULL}, 0, true, NULL},
+    // };
 
-    // Block pending completion of SPI access, but the erase will be ongoing
-    spiWait(fdevice->io.handle.dev);
+    // spiSequence(fdevice->io.handle.dev, segments);
+
+    // // Block pending completion of SPI access, but the erase will be ongoing
+    // spiWait(fdevice->io.handle.dev);
 }
 
 static void mb85rs_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
@@ -304,6 +280,13 @@ static void mb85rs_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, vo
     fdevice->callback = callback;
     fdevice->currentWriteAddress = address;
 }
+
+// TODO: This is written with the assumption that data will only ever span two sectors.
+// With single byte sectors most writes to flash will span more than two sectors.
+// What needs to be rewritten to fix this?
+
+// Writes can occur simultaneously over sectors, infinitely with automatic address incrementation.
+// > Leave the code as it is but assume that a single buffer will be passed to the function.
 
 static uint32_t mb85rs_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
@@ -316,7 +299,7 @@ static uint32_t mb85rs_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
     static busSegment_t segments[] = {
             {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, mb85rs_callbackReady},
             {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, mb85rs_callbackWriteEnable},
-            {.u.buffers = {pageProgram, NULL}, 4, false, NULL},
+            {.u.buffers = {pageProgram, NULL}, sizeof(pageProgram), false, NULL},
             {.u.link = {NULL, NULL}, 0, true, NULL},
             {.u.link = {NULL, NULL}, 0, true, NULL},
             {.u.link = {NULL, NULL}, 0, true, NULL},
@@ -463,4 +446,4 @@ const flashVTable_t mb85rs_vTable = {
 };
 
 
-// #endif
+#endif
