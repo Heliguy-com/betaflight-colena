@@ -116,7 +116,8 @@ void flashfsEraseCompletely(void)
 {
     if (flashGeometry->sectors > 0 && flashPartitionCount() > 0) {
         // if there's a single FLASHFS partition and it uses the entire flash then do a full erase
-        const bool doFullErase = (flashPartitionCount() == 1) && (FLASH_PARTITION_SECTOR_COUNT(flashPartition) == flashGeometry->sectors && flashGeormetry->flashType != USE_FRAM);
+        const bool doFullErase = (flashPartitionCount() == 1) && (FLASH_PARTITION_SECTOR_COUNT(flashPartition) == flashGeometry->sectors
+         && flashGeometry->flashType != FLASH_TYPE_FRAM);
         if (doFullErase) {
             flashEraseCompletely();
         } else {
@@ -594,6 +595,9 @@ bool flashfsIsEOF(void)
 void flashfsClose(void)
 {
     switch(flashGeometry->flashType) {
+    case FLASH_TYPE_FRAM:
+        break;
+    
     case FLASH_TYPE_NOR:
         break;
 

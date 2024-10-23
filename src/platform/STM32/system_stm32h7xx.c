@@ -56,7 +56,11 @@ void configureMasterClockOutputs(void)
 
 bool isMPUSoftReset(void)
 {
+#ifdef STM32H747xx
+    if (cachedRccCsrValue & RCC_RSR_SFT1RSTF)
+#else
     if (cachedRccCsrValue & RCC_RSR_SFTRSTF)
+#endif
         return true;
     else
         return false;
@@ -112,7 +116,7 @@ void systemInit(void)
 
     //RCC_ClearFlag();
 
-#if defined(STM32H743xx) || defined(STM32H750xx)
+#if defined(STM32H743xx) || defined(STM32H747xx) || defined(STM32H750xx)
     __HAL_RCC_D2SRAM1_CLK_ENABLE();
     __HAL_RCC_D2SRAM2_CLK_ENABLE();
     __HAL_RCC_D2SRAM3_CLK_ENABLE();
@@ -172,7 +176,7 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
 }
 
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+#if defined(STM32H743xx) || defined(STM32H747xx) || defined(STM32H747xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
 #define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x1ff09800)
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x1ff0a000)

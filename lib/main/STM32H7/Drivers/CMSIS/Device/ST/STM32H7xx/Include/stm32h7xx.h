@@ -8,8 +8,8 @@
   *          is using in the C source code, usually in main.c. This file contains:
   *           - Configuration section that allows to select:
   *              - The STM32H7xx device used in the target application
-  *              - To use or not the peripheral’s drivers in application code(i.e.
-  *                code will be based on direct access to peripheral’s registers
+  *              - To use or not the peripheralï¿½s drivers in application code(i.e.
+  *                code will be based on direct access to peripheralï¿½s registers
   *                rather than drivers API), this option is controlled by
   *                "#define USE_HAL_DRIVER"
   *
@@ -61,7 +61,8 @@
 #if !defined (STM32H743xx) && !defined (STM32H753xx)  && !defined (STM32H750xx) && !defined (STM32H742xx) && \
     !defined (STM32H745xx) && !defined (STM32H755xx)  && !defined (STM32H747xx) && !defined (STM32H757xx) && \
     !defined (STM32H7A3xx) && !defined (STM32H7A3xxQ) && !defined (STM32H7B3xx) && !defined (STM32H7B3xxQ) && !defined (STM32H7B0xx)  && !defined (STM32H7B0xxQ) && \
-    !defined (STM32H735xx) && !defined (STM32H733xx)  && !defined (STM32H730xx) && !defined (STM32H730xxQ)  && !defined (STM32H725xx) && !defined (STM32H723xx)
+    !defined (STM32H735xx) && !defined (STM32H733xx)  && !defined (STM32H730xx) && !defined (STM32H730xxQ)  && !defined (STM32H725xx) && !defined (STM32H723xx) && \
+    !defined (STM32H747xx)
   /* #define STM32H742xx */   /*!< STM32H742VI, STM32H742ZI, STM32H742AI, STM32H742II, STM32H742BI, STM32H742XI Devices */
   /* #define STM32H743xx */   /*!< STM32H743VI, STM32H743ZI, STM32H743AI, STM32H743II, STM32H743BI, STM32H743XI Devices */
   /* #define STM32H753xx */   /*!< STM32H753VI, STM32H753ZI, STM32H753AI, STM32H753II, STM32H753BI, STM32H753XI Devices */
@@ -133,6 +134,7 @@
 #elif defined(STM32H755xx)
   #include "stm32h755xx.h"
 #elif defined(STM32H747xx)
+  #define CORE_CM7
   #include "stm32h747xx.h"
 #elif defined(STM32H757xx)
   #include "stm32h757xx.h"

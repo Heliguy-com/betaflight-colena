@@ -28,6 +28,7 @@
 #define USBD_PRODUCT_STRING     "Betaflight STM32H747"
 #endif
 
+// #define CORE_CM7
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3

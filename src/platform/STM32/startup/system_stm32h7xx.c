@@ -204,7 +204,7 @@ typedef struct pllConfig_s {
     uint32_t vciRange;
 } pllConfig_t;
 
-#if defined(STM32H743xx) || defined(STM32H750xx)
+#if defined(STM32H743xx) || defined(STM32H747xx) || defined(STM32H750xx)
 /*
    PLL1 configuration for different silicon revisions of H743 and H750.
 
@@ -355,7 +355,7 @@ static void SystemClockHSE_Config(void)
 
     pllConfig_t *pll1Config;
 
-#if defined(STM32H743xx) || defined(STM32H750xx)
+#if defined(STM32H743xx) || defined(STM32H747xx) || defined(STM32H750xx)
     pll1Config = (HAL_GetREVID() == REV_ID_V) ? &pll1ConfigRevV : &pll1ConfigRevY;
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
     pll1Config = &pll1Config7A3;
@@ -473,7 +473,7 @@ void SystemClock_Config(void)
 {
     // Configure power supply
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H730xx)
+#if defined(STM32H743xx) || defined(STM32H747xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H730xx)
     // Legacy H7 devices (H743, H750) and newer but SMPS-less devices(H7A3, H723, H730)
 
     HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
@@ -622,7 +622,7 @@ void SystemClock_Config(void)
 
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SDMMC;
 
-#    if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H725xx)
+#    if defined(STM32H743xx) || defined(STM32H747xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H725xx)
     RCC_PeriphClkInit.PLL2.PLL2M = 5;
     RCC_PeriphClkInit.PLL2.PLL2N = 800000000 / PLL_SRC_FREQ * 5; // Oscillator Frequency / 5 (PLL2M) = 1.6 * this value (PLL2N) = 800Mhz.
     RCC_PeriphClkInit.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE; // Wide VCO range:192 to 836 MHz
@@ -751,7 +751,7 @@ void SystemInit (void)
     RCC->CR |= RCC_CR_HSEON;
     RCC->CR |= RCC_CR_HSI48ON;
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+#if defined(STM32H743xx) || defined(STM32H747xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
     /* Reset D1CFGR register */
     RCC->D1CFGR = 0x00000000;
 
@@ -808,7 +808,7 @@ void SystemInit (void)
 
     /* Configure the Vector Table location add offset address ------------------*/
 #if defined(VECT_TAB_SRAM)
-  #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
+  #if defined(STM32H743xx) || defined(STM32H747xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
     SCB->VTOR = D1_AXISRAM_BASE  | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal ITCMSRAM */
   #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
     SCB->VTOR = CD_AXISRAM_BASE  | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal ITCMSRAM */

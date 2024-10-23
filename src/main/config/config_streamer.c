@@ -234,7 +234,7 @@ static uint32_t getFLASHSectorForEEPROM(void)
     }
 }
 
-#elif defined(STM32H743xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx)
+#elif defined(STM32H743xx) || defined(STM32H747xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx)
 /*
 MCUs with uniform array of equal size sectors, handled in two banks having contiguous address.
 (Devices with non-contiguous flash layout is not currently useful anyways.)
@@ -404,7 +404,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     // Always True for flashPageSize = 1, which is the case for FRAM
     bool onPageBoundary = (flashAddress % flashPageSize == 0);
 
-    if (flashGeormetry->flashType != USE_FRAM && onPageBoundary) {
+    if (flashGeometry->flashType != FLASH_TYPE_FRAM && onPageBoundary) {
 
         // True when dataOffset = 0, (no difference between c->address and &eepromData[0])
         // c->address is a pointer to where in eePromData buffer begins?
@@ -424,7 +424,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     bufferSizes[0] = CONFIG_STREAMER_BUFFER_SIZE;
 
     // If using FRAM, call page program each time data is written
-    if (flashGeormetry->flashType != USE_FRAM) {
+    if (flashGeometry->flashType != FLASH_TYPE_FRAM) {
         flashPageProgram(address, flashAddress, buffer, bufferSizes, NULL)
     }
     else {

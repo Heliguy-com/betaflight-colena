@@ -102,6 +102,8 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/STM32H7/Drivers/CMSIS/Device/ST/STM32H7xx/Include \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
+# The missing symbols are defined in stm32h747xx.h ^^
+
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant
 
@@ -127,6 +129,21 @@ FIRMWARE_SIZE      := 448
 # and the maximum size of the data stored on the external storage device.
 MCU_FLASH_SIZE     := FIRMWARE_SIZE
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h743.ld
+endif
+
+else ifeq ($(TARGET_MCU),STM32H747xx)
+DEVICE_FLAGS       += -DSTM32H747xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h747_2m.ld
+STARTUP_SRC         = startup/startup_stm32h747xx.s
+MCU_FLASH_SIZE     := 2048
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+ifeq ($(RAM_BASED),yes)
+FIRMWARE_SIZE      := 448
+# TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware
+# and the maximum size of the data stored on the external storage device.
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h747.ld
 endif
 
 else ifeq ($(TARGET_MCU),STM32H7A3xxQ)

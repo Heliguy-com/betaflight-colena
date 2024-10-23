@@ -360,7 +360,7 @@ bool w25n_identify(flashDevice_t *fdevice, uint32_t jedecID)
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
-    const uint32_t managementStartBlock = W25N_BB_MANAGEMENT_START_BLOCK >= 0 ? W25N_BB_MANAGEMENT_START_BLOCK : fdevice->geometry.sectors + W25N_BB_MANAGEMENT_START_BLOCK;
+    const uint32_t managementStartBlock = W25N_BB_MANAGEMENT_START_BLOCK >= 0 ? (uint32_t)W25N_BB_MANAGEMENT_START_BLOCK : fdevice->geometry.sectors + (uint32_t)W25N_BB_MANAGEMENT_START_BLOCK;
     flashPartitionSet(FLASH_PARTITION_TYPE_BADBLOCK_MANAGEMENT,
             managementStartBlock,
             managementStartBlock + W25N_BB_MANAGEMENT_BLOCKS - 1);
