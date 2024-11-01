@@ -2,6 +2,37 @@
 
 Fork of Betaflight aimed to be loaded onto the STM32H747AI found on Colena's SBC.
 
+## Building
+
+Follow the steps for building in [Ubuntu](https://betaflight.com/docs/development/building/Building-in-Ubuntu) after downloading the repo inside of [WSL](https://betaflight.com/docs/development/building/Building-Betaflight-on-Windows-the-Linux-subsystem-way).
+
+Use `make COLENA` to build the COLENA config and `make STM32H747` to make the generic target. Include the flag `DEBUG=GDB` to compile with symbols
+
+## Debugging over STLink
+
+Download OpenOCD on your windows system. Run the following command inside of a windows powershell with your debugger attached:
+
+```
+OpenOCD.exe -f <path to stlink.cfg> -f <path to stm32h7x.cfg>
+```
+
+Then, run the GDB server and the following commands:
+
+```
+gdb-multiarch
+set architecture arm
+target extended-remote :3333
+load
+run
+```
+
+## TODO:
+
+- Deduce why the firmware is not booting correctly
+- Modify the config to set UART8 as an MSP receiver
+- Test the flash memory drivers
+- Write the drivers for the Magnetometer
+
 ---
 
 ![Betaflight](images/bf_logo.png)
