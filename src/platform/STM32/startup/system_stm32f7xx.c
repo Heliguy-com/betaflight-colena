@@ -69,15 +69,17 @@
 #include "platform.h"
 #include "drivers/persistent.h"
 
-#if !defined  (HSE_VALUE)
-  #define HSE_VALUE    ((uint32_t)8000000) /*!< Default value of the External oscillator in Hz */
-#endif /* HSE_VALUE */
-
 #if !defined  (HSI_VALUE)
   #define HSI_VALUE    ((uint32_t)16000000) /*!< Value of the Internal oscillator in Hz*/
 #endif /* HSI_VALUE */
 
-#define PLL_M     8
+#if !defined (HSE_VALUE) || (HSE_VALUE == 8000000)
+  #define HSE_VALUE    ((uint32_t)8000000) /*!< Default value of the External oscillator in Hz */
+  #define PLL_M        8
+#elif (HSE_VALUE == 25000000)
+  #define PLL_M        25
+#endif /* HSE_VALUE */
+
 #define PLL_N     432
 #define PLL_P     RCC_PLLP_DIV2 /* 2 */
 #define PLL_Q     9
