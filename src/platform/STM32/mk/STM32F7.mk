@@ -30,6 +30,7 @@ STDPERIPH_SRC   = \
             stm32f7xx_hal_pcd_ex.c \
             stm32f7xx_hal_pwr.c \
             stm32f7xx_hal_pwr_ex.c \
+            stm32f7xx_hal_qspi.c \
             stm32f7xx_hal_rcc.c \
             stm32f7xx_hal_rcc_ex.c \
             stm32f7xx_hal_rtc.c \
@@ -142,6 +143,7 @@ VCP_SRC = \
 MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/bus_i2c_timing.c \
+            drivers/bus_quadspi.c \
             drivers/dshot_bitbang_decode.c \
             drivers/pwm_output_dshot_shared.c \
             STM32/adc_stm32f7xx.c \
@@ -149,6 +151,7 @@ MCU_COMMON_SRC = \
             STM32/bus_i2c_hal_init.c \
             STM32/bus_i2c_hal.c \
             STM32/bus_spi_ll.c \
+            STM32/bus_quadspi_hal.c \
             STM32/debug.c \
             STM32/dma_reqmap_mcu.c \
             STM32/dma_stm32f7xx.c \

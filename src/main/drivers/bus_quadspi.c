@@ -102,7 +102,7 @@ void quadSpiResetErrorCounter(QUADSPI_TypeDef *instance)
 }
 
 const quadSpiHardware_t quadSpiHardware[] = {
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32F7)
     {
         .device = QUADSPIDEV_1,
         .reg = QUADSPI,

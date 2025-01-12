@@ -24,12 +24,12 @@
 
 typedef struct quadSpiPinDef_s {
     ioTag_t pin;
-#if defined(STM32H7)
+#if defined(STM32H7) || defined(STM32F7)
     uint8_t af;
 #endif
 } quadSpiPinDef_t;
 
-#if defined(STM32H7)
+#if defined(STM32H7) || defined(STM32F7)
 #define MAX_QUADSPI_PIN_SEL 3
 #endif
 
@@ -66,7 +66,7 @@ typedef struct QUADSPIDevice_s {
     ioTag_t bk2IO2;
     ioTag_t bk2IO3;
     ioTag_t bk2CS;
-#if defined(STM32H7)
+#if defined(STM32H7) || defined(STM32F7)
     uint8_t bk1IO0AF;
     uint8_t bk1IO1AF;
     uint8_t bk1IO2AF;
