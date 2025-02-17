@@ -368,31 +368,35 @@ static void w25q128fv_eraseCompletely(flashDevice_t *fdevice)
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_CHIP_ERASE_MS);
 }
 
-MMFLASH_CODE static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const uint8_t *data, int length)
+MMFLASH_CODE static bool w25q128fv_loadProgramData(flashDevice_t *fdevice, const uint8_t *data, int length)
 {
+    bool success = false;
+
     w25q128fv_waitForReady(fdevice);
 
 #if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
 #ifdef USE_FLASH_WRITES_USING_4LINES
-    quadSpiTransmitWithAddress4LINES(quadSpi, W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+    success = quadSpiTransmitWithAddress4LINES(quadSpi, W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
 #else
-    quadSpiTransmitWithAddress1LINE(quadSpi, W25Q128FV_INSTRUCTION_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+    success = quadSpiTransmitWithAddress1LINE(quadSpi, W25Q128FV_INSTRUCTION_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
 #endif
 #elif defined(USE_OCTOSPI)
     OCTOSPI_TypeDef *octoSpi = fdevice->io.handle.octoSpi;
 
 #ifdef USE_FLASH_WRITES_USING_4LINES
-    octoSpiTransmitWithAddress4LINES(octoSpi, W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+    success = octoSpiTransmitWithAddress4LINES(octoSpi, W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
 #else
-    octoSpiTransmitWithAddress1LINE(octoSpi, W25Q128FV_INSTRUCTION_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+    success = octoSpiTransmitWithAddress1LINE(octoSpi, W25Q128FV_INSTRUCTION_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
 #endif
 #endif
 
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_PAGE_PROGRAM_MS);
 
     w25q128fvState.currentWriteAddress += length;
+
+    return success;
 }
 
 MMFLASH_CODE static void w25q128fv_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
@@ -419,7 +423,11 @@ MMFLASH_CODE static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevic
             return 0; // TODO report failure somehow.
         }
 
-        w25q128fv_loadProgramData(fdevice, buffers[i], bufferSizes[i]);
+        bool success = w25q128fv_loadProgramData(fdevice, buffers[i], bufferSizes[i]);
+
+        if (success) {
+        	fdevice->callback(bufferSizes[i]);
+        }
     }
 
     return fdevice->callbackArg;
